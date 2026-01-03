@@ -1,0 +1,141 @@
+---
+title: "Project 2"
+author: April Baik
+format: 
+  html: 
+    embed-resources: true
+editor: visual
+---
+
+## Data
+
+**Research Topic:**
+
+The topic of this experiment is to determine whether the method of studying scriptures influences college students' level of focus. Many students study scriptures in numerous ways, reading, taking notes, writing down the quotes on their phone, and on. After the interpretation of this report, we will be able to tell which studying method is effective to college students.This experiment tests whether the active studying method (taking notes) leads to higher self-reported focus than the passive method (just reading) during a 15 minutes study session.
+
+**Response Variable:**
+
+After the 15 minutes study session, we had the students rate themselves how focused they were from 1 to 10 for both passive and acting reading method. This response variable would be a quantitative variable.
+
+**Factors:**
+
+The two different learning methods is the factor that affects the response variable: The passive method and the active method. The passive method is in which students only read the scriptures without pencil and notebook for the 15 minutes. The active study method is in which students freely take notes, highlight sentences while reading the scriptures. We expect that these factors to have effect on the response variable, because taking notes and organizing the readings are known to increase focus and effective for understanding materials.
+
+**Experiment:**
+
+Students study scriptures for 15 minutes for two days. One day, the students only read the scriptures without taking notes or writing down, and the other day, students take notes, write down their learnings in their notebooks, and utilize the Gospel Library. After 15 minutes of studying, students rate themselves on how focused they were from 1 to 10 for the 15 minutes.
+
+**Random and Experimental Procedure:**
+
+The sample is randomized by choosing random places on Campus by computer and asking people to do the experiment. Students in the sample are 5 people each from JSFB, HBLL, TMCB, RB, JKB, and MARB. Randomly assigned 15 students did the passive study method first, and the other 15 students did the active study method first. Students are required to study exactly 15 minutes with a timer and follow the instructions given.
+
+**Amount of Replication:**
+
+30 students engaged in this experiment, and we had them all do both active and passive study methods to decrease the personal differences. We chose 30 for the sample size because sample sizes equal to or greater than 30 are often considered sufficient under the central limit theorem.
+
+------------------------------------------------------------------------
+
+## Import
+
+```{r}
+#| echo: true
+#| include: false
+#| warning: false
+#| message: false
+
+library(tidyverse)
+library(table1)
+
+project2 <- read.csv('project2.csv')
+head(project2)
+
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
+
+## Wrangling
+
+```{r}
+#| echo: true
+project2<- project2|>
+  mutate(difference = active - passive)|>
+  mutate(campus = factor(campus))
+
+
+
+
+project2_long <- 
+  pivot_longer(project2,
+  cols = c(passive, active),
+  names_to = "study_method",
+  values_to = "rating"
+)
+
+project2_long <- mutate(project2_long, study_method = factor(study_method, levels = c("passive", "active")))|>
+mutate(study_method = relevel(study_method, ref = "active"))
+
+
+
+
+
+```
+
+## EDA
+
+```{r}
+#| eval: true
+ggplot(project2, aes(x =order, y =(difference),  fill = order)) +
+ geom_boxplot()+
+  labs(
+   title = "How students were focused comparing the two study methods",
+    x = "Order of Study Method", 
+    y = "Difference(Active - Passive)"
+   ) +
+    theme_minimal()+
+  facet_wrap(~campus)
+
+table1(~difference | order + campus, data = project2)
+
+```
+
+The graphic and the table show two different boxplots of students' rating differences, which have a different study method order for each building. Most of the differences are above 0, which means that students rated themselves higher score when they studied with the active method.
+
+For the HBLL, the active first boxplot is right-skewed, having only the right whisker. Its median is 2, and the spread is from 2 to 2.6. The passive first boxplot is symmetric. Its median is 2.5, and its spread is from 2.2 to 2.8.
+
+For the JFSB, the active first boxplot is symmetric, its spread is from 1.1 to 1.9, and its median is 1.5. The passive first boxplot is right-skewed, and its spread is from 1 to 1.6 with a median of 1. It only has the right whisker.
+
+For the JKB, the active first boxplot is symmetric, its spread is from -2.8 to -0.1, and its median is -1.5. The passive first boxplot is right-skewed, and its spread is from 1.5 to 4 with a median of 2. It has a long right whisker and a short left whisker. These boxplots have outstandingly larger spreads and a bigger difference between the two boxplots than all the other boxplots from other buildings.
+
+For MARB, the active first boxplot is right-skewed, having only the right whisker. Its median is 1, and the spread is from 1 to 1.5. The passive first boxplot is symmetric. Its median is 2.5, and its spread is from 2.2 to 2.8.
+
+For RB, the active first boxplot is left-skewed, having only the whiskers on the left side. Its spread is from 1 to 1.6, and its median is 2. The passive first boxplot is symmetric, having its median at 2.5 and spread from 1.8 to 2.1, which is a little wider than the other boxplots.
+
+For TMCB, the active first boxplot is symmetric, its spread is from 0.1 to 0.9, and its median is 0.5. The passive first boxplot is left-skewed, and its spread is from 1.5 to 2 with a median of 2. It only has the left whisker.
+
+The difference between the students who did the passive method first is in a higher position than the active method first box in all buildings except the JFSB. We can bring up the result that students tend to have a bigger difference in their self-ratings when they start the passive method first.
+
+## Modeling(ANOVA table)
+
+```{r}
+
+out <- aov(difference ~ order+campus, data = project2)
+project2$order <- relevel(as.factor(project2$order), ref = "passive first")
+confint(out)
+
+out <- aov(difference ~ order+campus, data = project2)
+project2$order <- relevel(as.factor(project2$order), ref = "active first")
+confint(out)
+
+summary(out)
+
+```
+
+We are 95% confident that the true mean for the difference in student ratings among those who completed the passive method first are (0.41, 3.36), and the true mean for the difference in student ratings among those who completed the active method first are (1.60, 4.74).
+
+The p-value for the order is 0.0669, which is between 0.05 and 0.1, which shows that it has a weak effect. The p-value for campus is 0.5689, which is larger than 0.1. This indicates that the p-value of the campus is not statistically significant. Therefore, the campus does not have a significant impact on students' self-rating difference, while the order has a weak effect on the result.
+
+## Summary
+
+The goal of this experiment is to determine whether the different method of studying scriptures influences college students' level of focus. The box plots show that students were more focused when they used the active study method than the passive one, mostly having positive difference rates. In the research, the students who did the passive method first tend to have larger difference rates, and students who were in JKB tend to have a larger spread and difference between the two boxplots. However, the modeling indicates that the factor campus do not significantly impact the result and the order has weak effect, having large p-values.
+
+In summary, students rated themselves higher when they were using the active method than the passive method, having most of the differences as positive numbers. However, the factors we modeled, such as order and campus, have weak effect or do not have a significant impact on the difference, having large p-values. Therefore, the students tend to focus effectively when they used active study methods, but the order of the study method or which building the students were in does not impact their rating differences.
